@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub Pages: How to Publish a Free Static Website in 2026</title>
+<meta name="description" content="">
+<meta name="keywords" content="githubpages, staticsite, jekyll, githubactions">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://krilinz.github.io/ai-engineering-notes/github-pages-how-to-publish-a-free-static-website-in-2026/">
+<style>body{max-width:44rem;margin:2rem auto;padding:0 1rem;font:16px/1.7 system-ui,sans-serif;color:#1b1b1b}img{max-width:100%;height:auto}</style>
+</head>
+<body>
+<article>
+<h1>GitHub Pages: How to Publish a Free Static Website in 2026</h1>
+<p><img src="https://image.pollinations.ai/prompt/GitHub%20Pages%20How%20to%20Publish%20a%20Free%20Static%20Website%20in%202026%2C%20about%20GitHub%20Pages.%20editorial%20tech%20illustration%2C%20clean%20modern%20flat%20design%2C%20soft%20gradient%2C%20professional%2C%20no%20text%2C%20no%20watermark%2C%20no%20letters?width=1280&height=720&nologo=true&seed=708063" alt="GitHub Pages" loading="lazy" style="max-width:100%;height:auto"></p>
+<p>GitHub Pages is a free hosting service that turns any GitHub repository into a live, publicly accessible website, supporting HTML, CSS, JavaScript, static site generators like Jekyll, and custom domains — with HTTPS included. If you have a repository, you can publish a production-ready static site in minutes without paying for a server.</p>
+<p>Before static site builders dominated conversations, hosting a personal website meant renting shared server space, configuring Apache, and hoping nothing broke. GitHub Pages changed that equation by letting developers ship sites directly from the same version control system where the code already lives. The setup is so simple that many people underestimate how much real-world weight these sites carry: documentation portals, portfolios, startup landing pages, and course projects all run on it daily. This guide walks through how it works, what it does well, where it falls short, and how to get a site published today.</p>
+<h2>What Exactly Is GitHub Pages?</h2>
+<p>GitHub Pages is a static site hosting service built into GitHub, available to every user and organization at no cost. It serves files straight from a repository — either the main branch, a dedicated `gh-pages` branch, or a `/docs` folder — through GitHub's CDN using the Fastly infrastructure.</p>
+<p>Because it only serves static content, there is no backend, no database, and no server-side code execution. Everything that reaches the visitor's browser is pre-built: HTML templates, stylesheets, scripts, and assets. That constraint sounds limiting, but it aligns perfectly with how the modern web actually works for most sites. Frameworks like Next.js, Astro, Hugo, and Jekyll compile a project down to plain files, and GitHub Pages serves exactly those files.</p>
+<p>Every account gets a default domain in the format `username.github.io/repo-name`, and you can point a custom domain at it with a couple of DNS records. HTTPS certificates are provisioned automatically through Let's Encrypt, which removes one of the most common friction points people hit when self-hosting.</p>
+<p>The service is also deeply tied to GitHub Actions, the platform's automation layer. Instead of pushing raw HTML, you can configure a workflow that builds your site from source files on every push, meaning your "deployment" step is just a YAML file sitting in your repo.</p>
+<h2>How Do You Publish Your First Site on GitHub Pages?</h2>
+<p>You publish a site by enabling GitHub Pages in your repository settings and choosing the branch and folder GitHub should serve. The site goes live at an address based on your username and repository name.</p>
+<p>The basic flow looks like this:</p>
+<p>1. Create a repository (public, or private on paid plans) and add an `index.html` file.
+2. Open <strong>Settings → Pages</strong> and select the branch — usually `main` — and the root folder.
+3. Wait for the first deployment to complete, then visit `https://yourusername.github.io/repo-name/`.</p>
+<p>That's genuinely all it takes for a plain HTML site. For anything more dynamic, the process adds one layer: a build step. If your project uses a static site generator, you add a GitHub Actions workflow that installs dependencies, runs the build command, and uploads the generated output to the `github-pages` environment. GitHub provides an official starter workflow, so you rarely write it from scratch — you pick the template that matches your stack.</p>
+<p>One practical detail beginners trip over: relative paths. If your site lives at `username.github.io/repo-name/`, absolute paths like `/css/style.css` will break, because they resolve against the domain root, not the repository folder. Relative paths (`./css/style.css`) or a custom domain sidestep the problem entirely.</p>
+<h2>Is GitHub Pages Really Free, and What Are the Limits?</h2>
+<p>Yes, GitHub Pages is free for public repositories on all plans, but it enforces usage limits designed for static sites, not full web applications. According to GitHub's official documentation as of 2026, published sites have a soft bandwidth limit of 100 GB per month and a soft build limit of 10 builds per hour.</p>
+<p>Those numbers sound small until you realize a lean static page rarely exceeds a few hundred kilobytes. A portfolio site could comfortably serve tens of thousands of visitors inside that bandwidth ceiling. Where people get into trouble is hosting large binary files — videos, big image libraries, datasets. GitHub's guidance is explicit: Pages is not meant for hosting files primarily intended for download or commercial distribution.</p>
+<p>Other constraints worth knowing before you commit:</p>
+<p>- <strong>No server-side code.</strong> No PHP, no Node backend, no database queries at request time. Any dynamic logic must happen client-side or through external APIs.
+- <strong>Repository size guidance.</strong> GitHub recommends keeping Pages repos under roughly 1 GB.
+- <strong>Public repos on free plans.</strong> Private repository publishing requires a paid GitHub plan (Pro, Team, or Enterprise).
+- <strong>No commerce.</strong> GitHub's terms prohibit using Pages as a hosting platform for commercial services like e-commerce tiers within SaaS products.</p>
+<p>For a portfolio, blog, documentation, or project landing page, these limits are almost never a real problem. They exist to keep the service in its lane — static hosting, generously provisioned.</p>
+<h2>Jekyll vs. GitHub Actions: How Do Builds Actually Work?</h2>
+<p>Internally, GitHub Pages has first-class support for Jekyll, a static site generator written in Ruby, and every push to your Pages source triggers an automatic Jekyll build. For a plain Markdown-and-themes blog, this is the zero-configuration path: write a post, commit, and the site rebuilds on its own.</p>
+<p>If you want anything else — Hugo, Astro, Eleventy, Next.js with static export, SvelteKit — you switch to GitHub Actions. You add a workflow file under `.github/workflows/` that defines the build pipeline: checkout the code, install the toolchain, run the generator, deploy the `public` or `dist` folder. GitHub maintains official starter workflows for the most common generators, so switching usually means copying a template and adjusting two or three lines.</p>
+<p>The tradeoff is worth understanding. Jekyll's built-in path is frictionless but pins you to Jekyll's version and plugin support on GitHub's servers. The Actions path gives you full control over versions and plugins at the cost of maintaining a YAML file. Most experienced developers land on Actions for anything nontrivial — not because Jekyll is bad, but because deterministic, locally reproducible builds save debugging headaches later.</p>
+<h2>When Does GitHub Pages Make Sense — and When Doesn't It?</h2>
+<p>GitHub Pages makes sense when your site is fully static, your traffic is moderate, and you want hosting that lives inside your development workflow with zero infrastructure to maintain. It is the natural home for documentation, portfolios, personal blogs, project websites, and prototypes.</p>
+<p>It doesn't make sense when you need dynamic behavior, authentication, server-side rendering at request time, or guaranteed enterprise-grade SLAs. A site that reads from a database, serves different content per user, or processes forms with business logic needs a real backend — GitHub Pages simply cannot run one. You can bolt on third-party services (serverless functions, headless CMSs, API gateways), but at that point you've crossed into architecture territory that other platforms handle more naturally.</p>
+<p>There's also a professional-development angle. Learning to deploy from a repository teaches habits that transfer directly to industry work: understanding build pipelines, DNS configuration, HTTPS certificate provisioning, and deployment environments. Anyone working on their portfolio is usually sharpening their Git skills at the same time. And if you're also sharpening your code fundamentals — for instance, practicing a guide on how to reverse a list in <a href="https://4geeks.com/en/how-to/how-to-reverse-a-list-in-python">Python</a> on the same platform where your future site lives — the repository becomes a one-stop showcase of both your projects and your process.</p>
+<h2>How Do You Connect a Custom Domain to GitHub Pages?</h2>
+<p>You connect a custom domain by adding DNS records at your domain registrar and configuring the domain in your repository's Pages settings. GitHub then provisions an HTTPS certificate for your domain automatically through Let's Encrypt.</p>
+<p>The mechanics depend on whether you want a subdomain (`www.example.com`) or an apex domain (`example.com`). For most setups, the process is:</p>
+<p>- Add a CNAME record pointing `www.yourdomain.com` to `yourusername.github.io`.
+- For the apex domain, add A records to GitHub's published IP addresses, or use the recommended approach of a registrar-level redirect to `www`.
+- In <strong>Settings → Pages</strong>, enter your custom domain and wait for the DNS check to pass.
+- Create a `CNAME` file in your repository containing just your domain, so the setting survives rebuilds.</p>
+<p>One failure mode catches people repeatedly: forgetting to enable "Enforce HTTPS" after the certificate is issued. The option appears only once verification completes, and until you flip it, visitors can still hit the insecure version of your site. DNS propagation also takes time — minutes with some registrars, up to 48 hours with others — so don't panic if the first verification attempt fails.</p>
+<h2>How Does GitHub Pages Compare to Netlify and Vercel?</h2>
+<p>GitHub Pages wins on simplicity and cost; Netlify and Vercel win on advanced features like serverless functions, preview deployments per pull request, and more generous build quotas. Choosing between them is less about quality and more about what your project actually needs.</p>
+<p>Netlify and Vercel both offer free tiers that include automatic branch previews — every pull request gets a unique preview URL — plus forms handling, redirects at the edge, and serverless functions on their free tiers. GitHub Pages offers none of that, but it also asks nothing of you: no account on another platform, no vendor relationship, no per-seat pricing to think about later.</p>
+<p>A reasonable rule of thumb: if your site is a set of static files and you already push to GitHub, GitHub Pages is the shortest path from commit to live URL. If your project needs runtime logic, edge functions, or a real preview workflow for a team, Netlify or Vercel justify the extra setup. It's also worth noting how far open, repository-based projects can go: the moment when <a href="https://4geeks.com/en/blog/trends-and-tech/4geeks-academy-becomes-open-sourced">4Geeks Academy became open sourced</a> showed how education projects built on public repositories can grow into full platforms while keeping their foundations visible to everyone.</p>
+<h2>Your Next Step: Ship Something Small Today</h2>
+<p>The best way to learn GitHub Pages is to publish something real within the next hour. Pick a small project — a one-page bio, a rendered Markdown CV, a README-turned-site — and push it to a new repository. Enable Pages, hit the URL, and fix whatever breaks. That first deploy will teach you more than another hour of reading. When you outgrow it, migrating to a full platform is straightforward, because the site itself is just files in a repository you own.</p>
+<h2>Frequently Asked Questions</h2>
+<h3>Do I need to know Git to use GitHub Pages?</h3>
+<p>Basic Git knowledge is strongly recommended, since publishing means committing and pushing files to a repository. You can get started with just a handful of commands: `git add`, `git commit`, and `git push`. GitHub also lets you create and edit files directly in the web interface, which works for a first site but becomes impractical once you're using build workflows or making regular updates.</p>
+<h3>Does GitHub Pages support HTTPS for custom domains?</h3>
+<p>Yes. When you connect a custom domain, GitHub verifies the DNS configuration and provisions an HTTPS certificate through Let's Encrypt automatically. You then enable the "Enforce HTTPS" option in your repository's Pages settings. You don't buy or renew the certificate yourself; GitHub handles issuance and renewal behind the scenes per its documentation as of 2026.</p>
+<h3>Is GitHub Pages a static-only platform?</h3>
+<p>Yes. GitHub Pages serves only pre-built files: HTML, CSS, JavaScript, images, and similar assets. It cannot execute server-side code, run a database, or render pages dynamically per request. Any dynamic behavior — search, comments, forms — must be implemented client-side with JavaScript or delegated to external services and APIs.</p>
+<h3>Does GitHub Pages work well with Jekyll?</h3>
+<p>Exceptionally well. GitHub Pages runs native Jekyll builds automatically: write Markdown files, commit them, and the site rebuilds on every push without any workflow configuration. You can use Jekyll themes hosted on GitHub with no extra setup. For other generators like Hugo or Astro, you use a GitHub Actions build workflow instead.</p>
+<h3>Is GitHub Pages suitable for business websites?</h3>
+<p>For a simple static business site — a landing page, about page, or documentation — yes, within the terms of service. GitHub's terms prohibit using Pages primarily for commercial file hosting or as part of a paid SaaS offering. Heavy traffic or business-critical uptime requirements are better served by a platform with formal SLAs, but a small marketing site performs fine on a static page with a custom domain.</p>
+<h3>Can I protect content on GitHub Pages sites?</h3>
+<p>Not on free public repositories, since public repository Pages sites are publicly accessible by design. Any visitor can also view your repository's source code unless you use a private repository with a paid GitHub plan. However, private repo publishing still produces a public website once deployed — access control applies to your source code, not to authenticated visitors of the live site.</p>
+</article>
+<hr>
+<p><a href="../">Volver al índice</a></p>
+</body>
+</html>

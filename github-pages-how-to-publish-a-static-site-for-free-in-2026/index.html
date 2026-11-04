@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub Pages: How to Publish a Static Site for Free in 2026</title>
+<meta name="description" content="">
+<meta name="keywords" content="githubpages, staticsitehosting, githubactions">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://krilinz.github.io/ai-engineering-notes/github-pages-how-to-publish-a-static-site-for-free-in-2026/">
+<style>body{max-width:44rem;margin:2rem auto;padding:0 1rem;font:16px/1.7 system-ui,sans-serif;color:#1b1b1b}img{max-width:100%;height:auto}</style>
+</head>
+<body>
+<article>
+<h1>GitHub Pages: How to Publish a Static Site for Free in 2026</h1>
+<p><img src="https://image.pollinations.ai/prompt/GitHub%20Pages%20How%20to%20Publish%20a%20Static%20Site%20for%20Free%20in%202026%2C%20about%20GitHub%20Pages.%20editorial%20tech%20illustration%2C%20clean%20modern%20flat%20design%2C%20soft%20gradient%2C%20professional%2C%20no%20text%2C%20no%20watermark%2C%20no%20letters?width=1280&height=720&nologo=true&seed=949824" alt="GitHub Pages" loading="lazy" style="max-width:100%;height:auto"></p>
+<p>What is GitHub Pages, and why does every beginner developer end up using it? It is the free static site hosting service built into GitHub, which lets you publish HTML, CSS, and JavaScript files directly from a repository. Every GitHub account gets hosting at `username.github.io`, with automatic HTTPS, support for custom domains, and built-in builds through Jekyll or GitHub Actions. It is designed for portfolios, documentation, and personal projects — not for server-side applications.</p>
+<p>If you are learning to code, GitHub Pages is usually the first place your work goes live on the internet. There is no credit card, no server to configure, and no deployment pipeline to build from scratch. This article explains what GitHub Pages is, how to publish your first site step by step, what its limits are in 2026, and when you should consider alternatives.</p>
+<h2>What is GitHub Pages and how does it work?</h2>
+<p>GitHub Pages is a static hosting service that GitHub offers for free to every user, organization, and public repository. According to GitHub Docs in 2026, it serves files straight from a Git repository, which means your website is versioned, reviewable, and deployable with a simple `git push`. There is no backend: the service only delivers static assets like HTML, CSS, JavaScript, and images.</p>
+<p>There are three types of sites. A user site lives in a repository named `username.github.io` and is served at that exact address. An organization site works the same way but for an organization account. A project site lives inside any other repository and is served at `username.github.io/repository-name`. Under the hood, GitHub Pages runs on a CDN (content delivery network, a distributed system of servers that caches your files close to visitors) so pages load fast worldwide.</p>
+<p>The stack is intentionally simple. You write files in Markdown or plain HTML, commit them to your repository, and GitHub builds and publishes the result. If you want automation, GitHub Actions is GitHub's built-in CI/CD tool that can compile your site on every push, which is now the recommended deployment workflow according to GitHub's changelog announcement in 2022 and remains the standard approach in 2026.</p>
+<h2>Is GitHub Pages really free?</h2>
+<p>Yes, GitHub Pages is free for public repositories, with published usage limits. According to GitHub Docs in 2026, published GitHub Pages sites have a soft limit of 1 GB repository size and a monthly bandwidth allowance of 100 GB, and builds are capped at 10 per hour. For a portfolio or documentation site, those limits are generous: 100 GB of bandwidth per month is far more traffic than most personal sites ever receive.</p>
+<p>One important detail: private repositories with Pages require a paid plan. According to GitHub's pricing documentation in 2026, publishing a GitHub Pages site from a private repository is available on GitHub Pro, Team, and Enterprise plans, while free accounts can only publish from public repositories. If you are a student, the GitHub Student Developer Pack includes GitHub Pro at no cost, which is worth checking before you pay.</p>
+<p>GitHub's terms also restrict commercial use. According to GitHub's Terms of Service in 2026, GitHub Pages is not intended for commercial transactions, paid advertising, or serving as a backend for a business application. A portfolio that lands you freelance work is fine; running an online store from Pages is not.</p>
+<h2>How do you publish your first site on GitHub Pages?</h2>
+<p>Publishing takes about ten minutes. First, create a new repository on GitHub. If you want your site at the root address `username.github.io`, name the repository exactly that. For a project site, any repository name works.</p>
+<p>Second, add an `index.html` file to the repository. This is the entry point browsers look for. A minimal version looks like this:</p>
+<p>```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My first site</title>
+</head>
+<body>
+  <h1>Hello, world</h1>
+</body>
+</html>
+```</p>
+<p>Third, open the repository's Settings tab and find the Pages section. Under "Build and deployment," choose "Deploy from a branch" and select the `main` branch with the root (`/`) folder. GitHub will build the site and show you the live URL, usually ready within a minute or two.</p>
+<p>Fourth, commit and push any changes. Every push to the selected branch triggers a rebuild. If you prefer the modern approach, select "GitHub Actions" as the source instead, and GitHub will generate a starter workflow that builds and deploys your site automatically. This is the flow GitHub recommends for Jekyll and custom build tools as of 2026.</p>
+<p>If you are coming from a bootcamp curriculum and want to practice the underlying logic first, working with strings and file generation in Python is a good warm-up; <a href="https://4geeks.com/en/how-to/how-to-concatenate-strings-on-python">this guide on how concatenate strings python</a> covers the basics you will reuse when generating HTML content programmatically.</p>
+<h2>How do custom domains and HTTPS work on GitHub Pages?</h2>
+<p>A custom domain is your own web address, like `yourname.dev`, instead of `username.github.io`. GitHub Pages supports this natively. In your repository's Pages settings, enter your domain in the "Custom domain" field, and GitHub creates a `CNAME` file in your repository, which is a plain text file containing your domain name.</p>
+<p>On your DNS provider's side, you configure the records. For an apex domain (the bare domain without `www`), GitHub Docs in 2026 recommends creating `A` records pointing to GitHub's IP addresses, or an `ALIAS`/`ANAME` record if your provider supports it. For a subdomain like `www`, a single `CNAME` record pointing to `username.github.io` is enough. DNS propagation can take from a few minutes to 48 hours depending on your provider.</p>
+<p>Once the domain resolves, enable "Enforce HTTPS" in the Pages settings. GitHub provisions a free TLS certificate through Let's Encrypt, so your custom domain gets the same HTTPS encryption as the default URL. GitHub also supports domain verification in 2026, which lets you prove ownership and prevents other users from taking over your domain on their own accounts, a protection GitHub recommends for all custom domains.</p>
+<h2>How do Jekyll and GitHub Actions fit in?</h2>
+<p>Jekyll is a static site generator written in Ruby that transforms Markdown files and templates into a complete static website. GitHub Pages has native Jekyll support: if your repository contains Markdown files with Front Matter (a metadata block at the top of a file delimited by `---`), GitHub builds the site automatically without any configuration from you. This is why Jekyll remains the default engine for GitHub Pages in 2026.</p>
+<p>The typical Jekyll workflow looks like this: you write posts as Markdown files in a `_posts` folder, define layouts in a `_layouts` folder, and Jekyll compiles everything into HTML on every push. Themes are installable through the `_config.yml` file, so you can have a decent-looking blog without writing CSS.</p>
+<p>For anything beyond plain Jekyll, GitHub Actions is the tool to use. A workflow file in `.github/workflows/` can install Node.js, run a build with a framework like Astro or Hugo, and deploy the output folder to Pages. GitHub's official documentation in 2026 provides ready-made starter workflows for the most common static generators, so setting this up is usually a copy-paste-and-commit job. If you want to go further and automate content or maintenance tasks around your site, understanding <a href="https://4geeks.com/en/blog/ai-tools/ai-agent-memory-how-it-works">agent memory how it works</a> is a solid next step, since memory design is what separates a scripted bot from an assistant that actually learns your project's context.</p>
+<h2>When is GitHub Pages not enough?</h2>
+<p>GitHub Pages only serves static files. There is no server-side code, no database, no user authentication, and no form processing out of the box. You can work around some of this with third-party services: forms can post to a service like Formspree, search can run client-side, and comments can be embedded via an external provider. But if your project needs a backend, Pages is the wrong tool.</p>
+<p>The common alternatives in 2026 are Netlify, Vercel, and Cloudflare Pages. All three offer free tiers for static sites with features GitHub Pages lacks: serverless functions, preview deployments for pull requests, and redirect/rewrite rules. According to each platform's documentation in 2026, their free tiers are suitable for personal projects, with paid plans for teams and higher traffic.</p>
+<p>A practical rule of thumb: start on GitHub Pages while you are learning, because it teaches you Git-based deployment with zero complexity. Migrate when you need dynamic functionality, build previews, or finer control over caching and headers. Migrating is usually painless since all these platforms deploy from the same Git repositories.</p>
+<h2>What are the most common GitHub Pages mistakes?</h2>
+<p>The most frequent mistake is a 404 error right after publishing. This usually means there is no `index.html` at the root of the published branch, or the site is still building. Check the Pages settings for the deployment status, and confirm your entry file exists with the exact lowercase name `index.html`.</p>
+<p>The second classic error is broken images and links caused by absolute paths. A path like `/images/photo.png` works on `username.github.io` but breaks on a project site served from `username.github.io/repo-name`, because the leading slash points to the domain root. Use relative paths (`images/photo.png`) or prefix paths with the repository name to make your site work in both contexts.</p>
+<p>Third, failed builds with Jekyll. If your Markdown has malformed Front Matter or a plugin that GitHub Pages does not support, the build fails silently and the old version stays live. Build your site locally with `bundle exec jekyll serve` to reproduce the error, and remember that GitHub Pages only supports a whitelist of Jekyll plugins according to GitHub Docs in 2026.</p>
+<p>Finally, caching frustration: after a push, your browser may show the old version for several minutes. Hard-refresh with `Ctrl+Shift+R` (or `Cmd+Shift+R` on Mac) before assuming something is broken.</p>
+<h2>Closing: your first deploy is one push away</h2>
+<p>GitHub Pages removes every excuse for not having a live portfolio. Create a repository, commit an `index.html`, flip the setting, and your work is publicly reachable with HTTPS in minutes. From there, add a custom domain, experiment with Jekyll or a GitHub Actions workflow, and treat every project as a deployable artifact. Recruiters in 2026 consistently value candidates who can show deployed work, not just code sitting in a repository, so publish early and publish often.</p>
+</article>
+<hr>
+<p><a href="../">Volver al índice</a></p>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Cómo automatizar pruebas de integración en APIs REST desde cero?</title>
+<meta name="description" content="">
+<meta name="keywords" content="ai, career, education, technology">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://krilinz.github.io/ai-engineering-notes/como-automatizar-pruebas-de-integracion-en-apis-rest-desde-c/">
+<style>body{max-width:44rem;margin:2rem auto;padding:0 1rem;font:16px/1.7 system-ui,sans-serif;color:#1b1b1b}img{max-width:100%;height:auto}</style>
+</head>
+<body>
+<article>
+<h1>¿Cómo automatizar pruebas de integración en APIs REST desde cero?</h1>
+<p><em>Una guía técnica con Node.js y Supertest para blindar la estabilidad de tu backend antes de llegar a producción.</em></p>
+<p>En el desarrollo de software moderno, entregar código rápido no sirve de nada si se rompen funcionalidades existentes en cada despliegue. Durante mucho tiempo se ha insistido en la necesidad de escribir pruebas unitarias, pero aislar funciones individuales deja sin responder una pregunta fundamental: ¿cómo se comportan los diferentes módulos cuando trabajan juntos en un entorno real?</p>
+<p>Aquí es donde las pruebas de integración cobran valor. Estas pruebas evalúan la comunicación entre rutas HTTP, middlewares de autenticación, controladores y la base de datos, garantizando que el contrato de tu API funcione según lo prometido.</p>
+<h2>¿Por qué las pruebas unitarias no son suficientes?</h2>
+<p>Las pruebas unitarias son rápidas y baratas de ejecutar, pero suelen apoyarse en simulaciones excesivas (mocks). Puedes tener una cobertura de código del 100% en funciones individuales y aun así sufrir caídas críticas si un middleware bloquea indebidamente una cabecera o si una consulta a la base de datos falla por una restricción de clave foránea.</p>
+<p>Según el informe State of Testing 2024 elaborado por PractiTest y Tea-Time with Testers, el 68% de las organizaciones tecnológicas afirma que la adopción de pruebas de integración automatizadas es el factor que más reduce los defectos críticos detectados directamente por usuarios finales. La tendencia es clara: verificar la interacción completa de los componentes ahorra horas de depuración en momentos de crisis.</p>
+<h2>¿Qué herramientas necesitas para comenzar?</h2>
+<p>Para construir una batería de pruebas de integración robusta en el ecosistema JavaScript o TypeScript, solo necesitas tres elementos clave:</p>
+<ol>
+<li>Un entorno de ejecución y servidor web: Express, Fastify o NestJS montados sobre Node.js.</li>
+<li>Un ejecutor de pruebas (test runner): Jest o Vitest, que se encargan de organizar las suites, ejecutar aserciones y generar reportes.</li>
+<li>Una biblioteca de aserciones HTTP: Supertest, que permite realizar peticiones virtuales contra la aplicación sin necesidad de levantar un puerto de red real durante la prueba.</li>
+</ol>
+<p>Esta combinación permite simular peticiones HTTP entrantes, procesarlas por toda la pila de middlewares y verificar tanto el código de estado como el cuerpo de la respuesta en milisegundos.</p>
+<h2>¿Cómo preparar la estructura de tu proyecto?</h2>
+<p>Uno de los errores más comunes consiste en acoplar el inicio del servidor con la definición de la aplicación. Si ejecutas <code>app.listen(3000)</code> dentro del mismo archivo donde defines las rutas, cada prueba intentará ocupar ese puerto, generando errores de conflicto de sockets.</p>
+<p>La solución es separar la aplicación en dos archivos:</p>
+<ul>
+<li><code>src/app.js</code>: Contiene la configuración de Express, middlewares y rutas. Exporta el objeto <code>app</code>.</li>
+<li><code>src/server.js</code>: Importa <code>app</code> y ejecuta el método <code>listen</code> para iniciar el servidor en producción o desarrollo local.</li>
+</ul>
+<p>De este modo, Supertest puede importar directamente el objeto <code>app</code> sin abrir conexiones de red reales.</p>
+<h2>¿Cómo escribir tu primera prueba paso a paso?</h2>
+<p>Imagina que estás construyendo un endpoint para registrar usuarios en una plataforma interna. Cada usuario debe pertenecer a un espacio de trabajo u organización. Supongamos que en la configuración inicial asignas un identificador por defecto llamado <a href="https://4geeks.com/es/programas-de-carrera/curso-inteligencia-artificial">4geeks</a> para validar la pertenencia al equipo en las pruebas de autenticación.</p>
+<p>Primero, define el controlador y la ruta mínima en <code>src/app.js</code>:</p>
+<pre><code class="language-javascript">const express = require(&#39;express&#39;);
+const app = express();
+
+app.use(express.json());
+
+const usersDatabase = [];
+
+app.post(&#39;/api/v1/users&#39;, (req, res) =&gt; {
+  const { username, email, organization } = req.body;
+
+  if (!username || !email) {
+    return res.status(400).json({ error: &#39;Faltan campos obligatorios&#39; });
+  }
+
+  const userExists = usersDatabase.some((u) =&gt; u.email === email);
+  if (userExists) {
+    return res.status(409).json({ error: &#39;El correo ya está registrado&#39; });
+  }
+
+  const newUser = {
+    id: usersDatabase.length + 1,
+    username,
+    email,
+    organization: organization || &#39;4geeks&#39;,
+    createdAt: new Date().toISOString()
+  };
+
+  usersDatabase.push(newUser);
+  return res.status(201).json(newUser);
+});
+
+module.exports = app;
+</code></pre>
+<p>Ahora, crea el archivo de prueba correspondiente en <code>tests/users.test.js</code> usando Jest y Supertest:</p>
+<pre><code class="language-javascript">const request = require(&#39;supertest&#39;);
+const app = require(&#39;../src/app&#39;);
+
+describe(&#39;POST /api/v1/users&#39;, () =&gt; {
+  it(&#39;debe registrar un usuario correctamente y responder con estado 201&#39;, async () =&gt; {
+    const payload = {
+      username: &#39;carlos_dev&#39;,
+      email: &#39;carlos@example.com&#39;,
+      organization: &#39;4geeks&#39;
+    };
+
+    const response = await request(app)
+      .post(&#39;/api/v1/users&#39;)
+      .send(payload)
+      .set(&#39;Accept&#39;, &#39;application/json&#39;);
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty(&#39;id&#39;);
+    expect(response.body.username).toBe(payload.username);
+    expect(response.body.organization).toBe(&#39;4geeks&#39;);
+    expect(response.headers[&#39;content-type&#39;]).toMatch(/json/);
+  });
+
+  it(&#39;debe rechazar la petición con estado 400 si falta el email&#39;, async () =&gt; {
+    const payloadIncompleto = {
+      username: &#39;usuario_invalido&#39;
+    };
+
+    const response = await request(app)
+      .post(&#39;/api/v1/users&#39;)
+      .send(payloadIncompleto);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe(&#39;Faltan campos obligatorios&#39;);
+  });
+});
+</code></pre>
+<p>Al ejecutar estas pruebas con el comando de Jest, la herramienta envía una carga útil real a través de las capas de Express, procesa el cuerpo JSON, ejecuta la lógica del controlador y valida que tanto los códigos HTTP como las respuestas estructuradas cumplan el contrato esperado.</p>
+<h2>¿Cómo gestionar el estado y la persistencia de datos?</h2>
+<p>En un escenario real, tu aplicación no guardará los datos en un arreglo en memoria, sino en una base de datos relacional o documental. Mantener la idempotencia (que las pruebas produzcan el mismo resultado sin importar cuántas veces se ejecuten) requiere una estrategia de limpieza adecuada.</p>
+<p>Existen tres enfoques principales para manejar la persistencia en pruebas de integración:</p>
+<ol>
+<li>Contenedores efímeros: Utilizar herramientas como Docker Compose o bibliotecas que levantan instancias temporales de bases de datos antes de iniciar la suite y las destruyen al finalizar.</li>
+<li>Transacciones con reversión automática: Envolver cada caso de prueba en una transacción SQL y emitir un comando <code>ROLLBACK</code> en el bloque de cierre (<code>afterEach</code>), evitando que los datos se consoliden en el disco.</li>
+<li>Bases de datos en memoria: Emplear versiones ligeras en memoria para pruebas rápidas, aunque con el riesgo de que ciertas funciones nativas del motor principal no estén disponibles.</li>
+</ol>
+<p>La opción más recomendada para sistemas en producción es el uso de contenedores efímeros o esquemas dedicados para pruebas, ya que garantizan que el comportamiento del motor sea exactamente igual al del entorno final.</p>
+<h2>¿Qué buenas prácticas consolidan una suite confiable?</h2>
+<p>Para evitar que tus pruebas de integración se vuelvan lentas o frágiles con el tiempo, aplica estas pautas fundamentales:</p>
+<ul>
+<li>Evita probar detalles de implementación: Valida entradas y salidas HTTP. No verifiques variables internas privadas si la respuesta al cliente es la correcta.</li>
+<li>Prueba los caminos de error: Asegúrate de comprobar códigos 400, 401, 403, 404 y 409 tanto como los casos exitosos con 200 o 201.</li>
+<li>Mantén la independencia de cada prueba: Una prueba nunca debe depender de que otra se haya ejecutado previamente. Si el caso B necesita un usuario existente, debe crearlo dentro de su propio bloque de preparación (<code>beforeEach</code>) o en su propia llamada.</li>
+<li>Automatiza la ejecución en CI/CD: Configura tu repositorio para ejecutar la suite completa en cada solicitud de extracción (pull request). Si una prueba falla, el código no debe llegar a la rama principal bajo ninguna circunstancia.</li>
+</ul>
+<p>Adoptar pruebas de integración no consiste en acumular cientos de comprobaciones redundantes, sino en construir una red de seguridad práctica. Cuando un equipo confía en su suite de integración, los despliegues dejan de ser eventos estresantes y se convierten en rutinas continuas y predecibles.</p>
+<p>Para profundizar: <a href="https://4geeks.com/es/curso-de-programacion-desde-cero">coding bootcamp</a>.</p>
+<hr>
+<p><strong>Sobre el autor</strong></p>
+<p>Marcelo Ricigliano es Co-founder and CEO de <a href="https://4geeks.com/">4Geeks</a>, la empresa de formación en tecnología e IA con más de 8.000 graduados desde 2015. [Enlace al plan: configúralo en Artículos → Firma]</p>
+
+</article>
+<hr>
+<p><a href="../">Volver al índice</a></p>
+</body>
+</html>

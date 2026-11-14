@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building Production-Grade AI Engineer Projects: The Evaluation-First Approach</title>
+<meta name="description" content="">
+<meta name="keywords" content="ai, career, education, technology">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://krilinz.github.io/ai-engineering-notes/building-production-grade-ai-engineer-projects-the-evaluatio/">
+<style>body{max-width:44rem;margin:2rem auto;padding:0 1rem;font:16px/1.7 system-ui,sans-serif;color:#1b1b1b}img{max-width:100%;height:auto}</style>
+</head>
+<body>
+<article>
+<h1>Building Production-Grade AI Engineer Projects: The Evaluation-First Approach</h1>
+<p><em>Move past basic API wrappers by designing systems that measure accuracy, handle latency, and mitigate real failure modes.</em></p>
+<p>The hiring landscape for artificial intelligence engineering has matured rapidly. A few years ago, wrapping a foundation model API inside a basic Streamlit dashboard was often enough to secure an introductory interview. Today, engineering teams dismiss these superficial wrappers immediately. When evaluating candidates, technical leads look for evidence that a developer understands systems engineering: data sanitization, retrieval degradation, deterministic evaluation, cost modeling, and latency mitigation.</p>
+<p>To build credibility, your technical portfolio must demonstrate production readiness. The most effective ai engineer projects do not attempt to be general-purpose chatbots. Instead, they solve narrow, high-friction problems and provide explicit architectural proof that their outputs are accurate, fast, and resilient to failure.</p>
+<h2>Why do standard portfolio builds fall short?</h2>
+<p>Most hobbyist builds rely entirely on third-party orchestration libraries that conceal fundamental engineering trade-offs. When an engineer builds a retrieval-augmented generation (RAG) tool using high-level abstractions, they often inherit blind spots. They cannot explain why a vector similarity search pulled irrelevant chunks, how token consumption scales under load, or how to measure regression when modifying prompt instructions.</p>
+<p>Production systems fail in ways that hobby projects never account for. Data drift degrades vector indexing over time, rate limits cause catastrophic drop-offs in throughput, and unconstrained context windows inflate operational bills without increasing response quality. Demonstrating that you can detect and solve these issues is what separates software professionals from prompt hobbyists.</p>
+<p>Figure 1: Primary Failure Modes in Generative AI System Deployments (Source: Stanford Center for Research on Foundation Models, 2023)
+According to data collected from production deployments, over 60 percent of system failures in retrieval pipelines stem from context misattribution, retrieval hallucination, and unhandled schema drift rather than model reasoning failures. When you design a portfolio piece, your system must actively monitor and counter these failure modes.</p>
+<h2>What separates a toy app from production architecture?</h2>
+<p>A production-grade project incorporates five foundational elements that basic tutorials omit:</p>
+<ol>
+<li>Deterministic Data Extraction: Rather than passing raw PDF text into an embedding model, your ingestion pipeline normalizes whitespace, extracts tabular structures, preserves document hierarchies, and strips noisy metadata.</li>
+<li>Hybrid Search: Dense vector retrieval excels at semantic similarity, but it routinely misses exact keyword matches, model numbers, and code identifiers. Combining sparse algorithms like BM25 with dense semantic search ensures comprehensive retrieval.</li>
+<li>Reranking Pipelines: Raw similarity scores from vector databases are rarely calibrated for relevance. Passing candidate documents through a cross-encoder reranker significantly narrows down context to only the most relevant text.</li>
+<li>Structured Output Validation: Enterprise applications consume structured data. Using tools like Pydantic ensures the model conforms strictly to valid JSON schemas, handling parsing errors programmatically.</li>
+<li>Automated Evaluation (Eval) Harnesses: You cannot improve what you cannot measure. A production project includes synthetic evaluation sets and automated benchmarks that run on every code update.</li>
+</ol>
+<h2>How do you build an automated evaluation pipeline?</h2>
+<p>To see what this looks like in practice, let us examine an evaluation harness for a customer support retrieval system. Instead of relying on manual spot-checks, we can implement an automated test suite that calculates semantic overlap, checks citation fidelity, and rejects hallucinated facts.</p>
+<p>The following Python example demonstrates a lightweight evaluation harness that checks model responses against predefined ground-truth references and enforces output constraints without relying on external enterprise platforms.</p>
+<pre><code class="language-python">import json
+from typing import Dict, List
+from pydantic import BaseModel, Field, ValidationError
+
+class SystemResponse(BaseModel):
+    answer: str = Field(description=&quot;Direct answer to the query&quot;)
+    citations: List[int] = Field(description=&quot;Source chunk IDs supporting the answer&quot;)
+    confidence_score: float = Field(ge=0.0, le=1.0)
+
+def evaluate_retrieval_faithfulness(retrieved_ids: List[int], cited_ids: List[int]) -&gt; float:
+    &quot;&quot;&quot;Calculates precision of citations against retrieved context chunks.&quot;&quot;&quot;
+    if not cited_ids:
+        return 0.0
+    valid_citations = [cid for cid in cited_ids if cid in retrieved_ids]
+    return len(valid_citations) / len(cited_ids)
+
+def evaluate_response(raw_output: str, retrieved_chunk_ids: List[int]) -&gt; Dict[str, float]:
+    metrics = {&quot;schema_valid&quot;: 0.0, &quot;citation_precision&quot;: 0.0, &quot;passed&quot;: 0.0}
+    
+    # Check structured output validity
+    try:
+        parsed_data = json.loads(raw_output)
+        validated = SystemResponse(**parsed_data)
+        metrics[&quot;schema_valid&quot;] = 1.0
+    except (json.JSONDecodeError, ValidationError):
+        return metrics
+    
+    # Check citation accuracy
+    precision = evaluate_retrieval_faithfulness(retrieved_chunk_ids, validated.citations)
+    metrics[&quot;citation_precision&quot;] = precision
+    
+    # Pass threshold: valid schema and 100% cited chunks must exist in context
+    if metrics[&quot;schema_valid&quot;] == 1.0 and metrics[&quot;citation_precision&quot;] == 1.0:
+        metrics[&quot;passed&quot;] = 1.0
+        
+    return metrics
+
+# Example usage
+retrieved_context_ids = [101, 102, 105]
+model_output = &#39;{&quot;answer&quot;: &quot;The refund policy lasts 30 days.&quot;, &quot;citations&quot;: [101, 105], &quot;confidence_score&quot;: 0.95}&#39;
+
+results = evaluate_response(model_output, retrieved_context_ids)
+print(&quot;Evaluation Results:&quot;, results)
+</code></pre>
+<p>This script runs deterministically. By incorporating this pipeline into a continuous integration workflow, you verify that prompt adjustments or embedding model updates do not introduce hallucinations or invalidate structured outputs.</p>
+<h2>Which architectures provide the highest hiring signal?</h2>
+<p>If you want to construct an impactful portfolio, choose systems that force you to confront architectural bottlenecks. Here are three project architectures that immediately demonstrate senior engineering capabilities:</p>
+<h3>1. Hybrid Search Engine with Reciprocal Rank Fusion (RRF)</h3>
+<p>Build a document question-answering system over dense technical documentation, such as financial reports or API specifications. Ingest raw files, clean them, and store them concurrently in a vector store and a BM25 index. Use Reciprocal Rank Fusion to combine candidate results before passing them to a lightweight reranker. Your code repository should include benchmarks comparing retrieval accuracy using pure vector search versus hybrid search with RRF.</p>
+<h3>2. Multi-Source Deterministic Evaluation Harness</h3>
+<p>Construct a developer tool that evaluates RAG pipelines against a golden dataset of queries and ground-truth answers. Your tool should quantify three critical metrics: retrieval recall, context relevance, and answer groundedness. Instead of relying solely on expensive external LLMs to judge outputs, implement heuristic checks, token-level overlap calculations, and negative-constraint checks. Provide users with a terminal-based dashboard that logs latency per query and token expenditures.</p>
+<h3>3. Agentic Workflow with Fallback and Self-Correction</h3>
+<p>Design an agent tasked with extracting structured data from unstructured contracts. The agent must parse the document, validate the extracted fields against strict Pydantic schemas, and execute self-correction loops when errors occur. If a validation error is encountered, the agent should catch the specific exception, format an error prompt containing only the failing schema requirement, and query the model again with adjusted parameters. Include a circuit breaker that halts the process if the agent exceeds three correction attempts, falling back gracefully to manual review queues.</p>
+<h2>How should you present your implementation?</h2>
+<p>Code quality alone does not complete the project. The way you present your engineering decisions matters just as much as the code itself. Technical reviewers look for clear documentation of trade-offs.</p>
+<p>Structure your repository documentation around engineering constraints:</p>
+<ul>
+<li>Architecture Overview: Provide an explicit system flow diagram showing data movement from ingestion to output.</li>
+<li>Latency and Cost Analysis: Include a breakdown of P50, P95, and P99 latency alongside cost-per-query calculations.</li>
+<li>Failure Analysis: Detail at least three real failure scenarios you encountered during development and explain how you resolved them in code.</li>
+<li>Benchmark Data: Show empirical proof that your design choices, such as adding a reranking step or switching chunking strategies, actually improved performance metrics.</li>
+</ul>
+<p>By focusing on system observability, strict evaluation, and resilient data handling, your portfolio shifts from showcasing elementary scripting to displaying production-grade software craftsmanship.</p>
+<p>For more on this, see <a href="https://4geeks.com/en/blog/software-engineer/ai-software-engineer">ai software engineer</a> and <a href="https://4geeks.com/en/blog/ai-engineer/ai-engineer-interview-questions">ai engineer interview questions</a>.</p>
+<hr>
+<p><strong>About the author</strong></p>
+<p>Marcelo Ricigliano is Co-founder and CEO at <a href="https://4geeks.com/">4Geeks</a>, the tech and AI education company with more than 8,000 graduates since 2015. [Plan link: set it in Articles → Signature]</p>
+
+</article>
+<hr>
+<p><a href="../">Volver al índice</a></p>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Cómo aplicar fine-tuning con LoRA en modelos de lenguaje abiertos?</title>
+<meta name="description" content="">
+<meta name="keywords" content="ai, career, education, technology">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://krilinz.github.io/ai-engineering-notes/como-aplicar-fine-tuning-con-lora-en-modelos-de-lenguaje-abi/">
+<style>body{max-width:44rem;margin:2rem auto;padding:0 1rem;font:16px/1.7 system-ui,sans-serif;color:#1b1b1b}img{max-width:100%;height:auto}</style>
+</head>
+<body>
+<article>
+<h1>¿Cómo aplicar fine-tuning con LoRA en modelos de lenguaje abiertos?</h1>
+<p><em>Aprende los fundamentos matemáticos y la implementación en código para adaptar modelos preentrenados a tareas específicas sin desbordar tu memoria GPU.</em></p>
+<p>El ecosistema del software ha experimentado un cambio radical en su relación con los modelos lingüísticos. Durante los primeros compases de esta revolución, la interacción se limitaba casi exclusivamente a consumir interfaces de programación de aplicaciones (APIs) propietarias. Se enviaba un texto, se recibía una respuesta y el margen de maniobra residía en la ingeniería de instrucciones. Sin embargo, cuando los requerimientos de un proyecto exigen privacidad estricta de datos, baja latencia en infraestructura local o un comportamiento estilístico y sintáctico que los prompts no logran fijar de forma determinista, el consumo pasivo de servicios externos muestra sus límites.</p>
+<p>Al abordar una formación inteligencia artificial con rigor técnico, uno de los hitos más importantes es comprender qué ocurre bajo el capó de las redes neuronales y cómo adaptar pesos existentes a necesidades concretas. Modificar un modelo abierto como Mistral o Llama para que aprenda la jerga técnica de una empresa, genere formatos JSON ultrarrestrictivos o clasifique incidencias complejas no requiere volver a entrenar miles de millones de parámetros desde cero. Para resolver este desafío con recursos acotados, la técnica LoRA (Low-Rank Adaptation) se ha convertido en el estándar de la industria.</p>
+<h2>¿Por qué el reentrenamiento completo ya no es viable para la mayoría de los equipos?</h2>
+<p>Los modelos fundacionales modernos contienen entre 7.000 y más de 70.000 millones de parámetros. Si intentáramos realizar un ajuste fino clásico (full fine-tuning), tendríamos que calcular y almacenar los gradientes y los estados del optimizador para cada uno de esos pesos en cada paso de retropropagación.</p>
+<p>El optimizador AdamW, el más utilizado en arquitecturas transformer, almacena dos estados por parámetro: el momento de primer orden y el de segundo orden. Cuando se suman los pesos del modelo en precisión de 16 bits (FP16 o BF16), los gradientes y el espacio de memoria para las activaciones intermedias, entrenar un modelo modesto de 7.000 millones de parámetros puede requerir más de 80 gigabytes de memoria VRAM en una GPU empresarial de alta gama. Esto deja fuera del juego a desarrolladores independientes y a la mayoría de las empresas.</p>
+<p>Según datos del AI Index Report 2024 de la Universidad de Stanford, los costes computacionales para entrenar modelos base de última generación superaron en varios casos los 100 millones de dólares, lo que ha impulsado a la comunidad técnica hacia métodos PEFT (Parameter-Efficient Fine-Tuning) para democratizar la especialización de estos sistemas sin asumir gastos prohibitivos de infraestructura.</p>
+<h2>¿En qué consiste matemáticamente Low-Rank Adaptation?</h2>
+<p>La premisa de LoRA es conceptualmente elegante: cuando adaptamos un modelo preentrenado a una tarea concreta, los cambios que sufren los pesos tienen lo que en álgebra lineal se conoce como un rango intrínseco bajo. Esto significa que la matriz de actualización no necesita todas sus dimensiones para representar la información aprendida.</p>
+<p>En un entrenamiento tradicional, si una matriz de pesos original se representa como W (con dimensiones d por k), la actualización se calcula directamente sumando otra matriz del mismo tamaño: W final es igual a W inicial más delta W. En LoRA, la matriz W original se congela por completo y nunca se modifica durante el entrenamiento. En su lugar, el cambio se descompone en el producto de dos matrices mucho más pequeñas, B y A, donde el rango r es un número entero muy pequeño, habitualmente entre 4 y 32.</p>
+<p>Si la dimensión original es de 4.096 por 4.096, la matriz delta W contiene más de 16 millones de parámetros entrenables. Si aplicamos LoRA con un rango r igual a 8, la matriz A tiene dimensiones de 4.096 por 8, y la matriz B tiene dimensiones de 8 por 4.096. La suma total de parámetros a entrenar para esa capa se reduce a unos 65.000. Al multiplicar B por A, recuperamos una matriz con las dimensiones exactas necesarias para sumarse a la salida de W, pero reduciendo el consumo de memoria en más del 99%.</p>
+<h2>¿Cómo implementar LoRA en código paso a paso?</h2>
+<p>Para llevar esta teoría a la práctica, podemos utilizar el ecosistema estándar de Python compuesto por PyTorch, Hugging Face Transformers y la librería PEFT. Imaginemos que deseamos especializar un modelo de lenguaje en la conversión de descripciones funcionales a esquemas SQL muy específicos.</p>
+<p>Primero, importamos las herramientas necesarias y configuramos los parámetros de bajo rango:</p>
+<pre><code class="language-python">import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer
+from peft import LoraConfig, get_peft_model, TaskType
+
+model_id = &quot;meta-llama/Meta-Llama-3-8B&quot;
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer.pad_token = tokenizer.eos_token
+
+base_model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype=torch.bfloat16,
+    device_map=&quot;auto&quot;
+)
+
+lora_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=16,
+    lora_alpha=32,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    lora_dropout=0.05,
+    bias=&quot;none&quot;
+)
+
+model = get_peft_model(base_model, lora_config)
+model.print_trainable_parameters()
+</code></pre>
+<p>El método print_trainable_parameters mostrará una reducción asombrosa: un modelo con ocho mil millones de parámetros pasará a tener apenas entre 5 y 15 millones de parámetros activos en el bucle de entrenamiento, lo que permite realizar el ajuste en una sola GPU doméstica con 16 o 24 GB de memoria.</p>
+<p>En la configuración anterior, el hiperparámetro r define la capacidad expresiva de la matriz de bajo rango. El parámetro lora_alpha actúa como un factor de escala constante sobre las actualizaciones, permitiendo regular la fuerza con la que los nuevos pesos influyen en la salida del modelo base. Los target_modules indican sobre qué proyecciones del mecanismo de atención se inyectarán las matrices LoRA; habitualmente se eligen las proyecciones de consulta (q_proj) y valor (v_proj).</p>
+<p>Una vez aplicado el adaptador, configuramos el bucle de entrenamiento habitual:</p>
+<pre><code class="language-python">training_args = TrainingArguments(
+    output_dir=&quot;./lora_sql_adapter&quot;,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=4,
+    warmup_steps=50,
+    max_steps=500,
+    learning_rate=2e-4,
+    fp16=True,
+    logging_steps=20,
+    save_strategy=&quot;steps&quot;,
+    save_steps=100
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tu_dataset_tokenizado
+)
+
+trainer.train()
+
+model.save_pretrained(&quot;./lora_sql_final&quot;)
+</code></pre>
+<p>El resultado guardado en el disco no ocupará los 15 o 16 gigabytes del modelo base original, sino apenas unas decenas de megabytes que contienen exclusivamente las matrices A y B entrenadas.</p>
+<h2>¿Cómo desplegar y combinar adaptadores en producción?</h2>
+<p>Una de las ventajas operativas más potentes de esta arquitectura es la versatilidad de despliegue. Debido a que el modelo base permanece inmutable, un único servidor puede mantener en memoria una sola instancia del modelo fundacional y cargar en caliente diferentes adaptadores LoRA según el usuario o la solicitud entrante. Un usuario que necesita consultas SQL puede activar el adaptador de base de datos, mientras que otro departamento que requiere asistencia técnica en soporte de tickets puede cargar su propio adaptador en la misma infraestructura.</p>
+<p>Si el objetivo final es la máxima velocidad de inferencia sin sobrecarga computacional adicional, los pesos de LoRA pueden fusionarse definitivamente con los pesos base utilizando el método merge_and_unload de la librería PEFT. Esto elimina cualquier coste de latencia durante las predicciones, devolviendo una red unificada lista para ejecutarse mediante motores de inferencia optimizados como vLLM o TensorRT-LLM.</p>
+<h2>¿Cómo prevenir el olvido catastrófico?</h2>
+<p>Al adaptar modelos a tareas muy concretas existe el riesgo de sufrir olvido catastrófico: el sistema sobrescribe habilidades previas como el razonamiento lógico general o la coherencia sintáctica para maximizar el acierto en los nuevos datos. Para mitigar este problema, la tasa de aprendizaje debe mantenerse conservadora (generalmente entre 1e-4 y 3e-4) y se recomienda incluir una pequeña proporción de ejemplos de lenguaje general dentro del conjunto de entrenamiento de ajuste fino.</p>
+<p>Dominar este flujo de trabajo permite a cualquier equipo técnico dejar de ser un simple consumidor de cajas negras para convertirse en un arquitecto de soluciones de inteligencia artificial adaptadas, eficientes y gobernadas bajo sus propios términos.</p>
+<p>Para profundizar: <a href="https://4geeks.com/es/programas-de-carrera/ingenieria-ia">curso inteligencia artificial</a> y <a href="https://4geeks.com/es/programas-de-carrera/ingenieria-ia-para-desarrolladores">curso agentes ia</a>.</p>
+<hr>
+<p><strong>Sobre el autor</strong></p>
+<p>Marcelo Ricigliano es Co-founder and CEO de <a href="https://4geeks.com/">4Geeks</a>, la empresa de formación en tecnología e IA con más de 8.000 graduados desde 2015. [Enlace al plan: configúralo en Artículos → Firma]</p>
+
+</article>
+<hr>
+<p><a href="../">Volver al índice</a></p>
+</body>
+</html>
